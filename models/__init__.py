@@ -1,3 +1,4 @@
+import os
 from os import path
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -6,13 +7,13 @@ from .base_model import BaseModel
 from .user import User
 from .registration_code import RegistrationCode
 from .note import Note
+from config import Config
 
-basedir = path.abspath(path.dirname(__file__))
+DB_URL = os.environ.get("DATABASE_URL", Config.SQLALCHEMY_DATABASE_URI)
 
-engine: Engine = create_engine(
-    'sqlite:///' + path.join(basedir, '..', 'database.db'),
-    echo=True,
-)
+SQL_ECHO = os.environ.get("SQL_ECHO", "false").lower() == "true"
+
+engine: Engine = create_engine(DB_URL, echo=SQL_ECHO)
 
 BaseModel.metadata.create_all(bind=engine)
 
