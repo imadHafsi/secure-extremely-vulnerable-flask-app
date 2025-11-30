@@ -6,9 +6,11 @@ from flask_login import LoginManager
 from flask import Flask, render_template, render_template_string, request, redirect
 from db_seed import setup_db
 from routes import init
+from config import Config
 
 app = Flask(__name__)
-app.secret_key = "super secret key"
+app.config.from_object(Config)
+
 app.config["BOOTSTRAP_SERVE_LOCAL"] = True
 app.config["CKEDITOR_SERVE_LOCAL"] = True
 bootstrap = Bootstrap5(app)
