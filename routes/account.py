@@ -14,6 +14,7 @@ from forms.account_form import AccountForm
 from utils.profile_image import get_base64_image_blob
 
 
+
 @app.route('/account')
 @login_required
 def account():
@@ -42,12 +43,13 @@ def search():
         )
 
 
-@app.route('/accounts/<int:user_id>/notes')
+@app.route('/accounts/notes')
 @login_required
-def get_personal_notes(user_id: int):
+def get_personal_notes():
+
     with Session() as session:
         personal_notes = session.query(Note).filter(
-            Note.user_id == user_id).all()
+            Note.user_id == current_user.id).all()
         return render_template('personal_notes.html',
                                personal_notes=personal_notes)
 
