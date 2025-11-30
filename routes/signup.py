@@ -12,15 +12,17 @@ from forms.registration_form import RegistrationForm
 
 def validate_token(code: str, session: Session) -> Union[str, None]:
     try:
-        result = session.execute(
-            text(f"""
-                SELECT id, code FROM {RegistrationCode.__tablename__} WHERE code = '{code}'
-            """)).first()
+        
+        token = (
+        session.query(RegistrationCode)
+        .filter(RegistrationCode.code == code)
+        .first()
+        )
 
-        if result is None:
+        if token is None:
             return None
 
-        return result.id
+        return token.id
     except OperationalError:
         return None
 
