@@ -1,18 +1,14 @@
 from json import dumps
 from sqlite3 import OperationalError
 from typing import Union
-from sqlalchemy.sql import text
-
 from flask import render_template, request, redirect, flash
 from bcrypt import gensalt, hashpw
 from app import app
 from models import Session, User, RegistrationCode
 from forms.registration_form import RegistrationForm
 
-
 def validate_token(code: str, session: Session) -> Union[str, None]:
     try:
-        
         token = (
         session.query(RegistrationCode)
         .filter(RegistrationCode.code == code)
@@ -26,16 +22,13 @@ def validate_token(code: str, session: Session) -> Union[str, None]:
     except OperationalError:
         return None
 
-
 @app.route('/signup', methods=['GET'])
 def signup():
     return render_template('signup.html')
 
-
 @app.route('/signup', methods=['POST'])
 def do_signup():
     form = RegistrationForm(request.form)
-
     if not form.validate():
         flash(dumps(form.errors), 'error')
     else:
