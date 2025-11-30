@@ -6,7 +6,6 @@ from uuid import uuid4
 from bcrypt import gensalt, hashpw
 from flask_login import login_required, current_user
 from flask import redirect, flash, render_template, request, Response, g, make_response
-from sqlalchemy import text
 
 from app import app
 from models import Session, Note
@@ -28,9 +27,14 @@ def search():
     with Session() as session:
         session.query(Note)
 
-        personal_notes = session.query(Note).filter(
-            Note.user_id == current_user.id,
-            text(f"text like '%{search_param}%'")).all()
+        personal_notes = (
+            session.query(Note)
+            .filter(
+                Note.user_id == current_user.id,
+                Note.text.like(f"%{search_param}%")
+            )
+            .all()
+        )
         return render_template(
             'search.html',
             search=search_param,
