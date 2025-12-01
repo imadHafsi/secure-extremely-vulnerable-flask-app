@@ -72,6 +72,7 @@ def add_image():
 
 
 @app.route('/account', methods=['POST'])
+@login_required
 def update_account():
     form = AccountForm(request.form)
 

@@ -42,7 +42,7 @@ def delete_note(note_id: int):
 
     with Session() as session:
         note = session.get(Note, note_id)
-        # One generic message: either note doesn't exist 
+        # One generic message: either note doesn't exist
         # or you're not allowed to reduce ID enumeration
         if note is None or not (current_user.is_admin or note.user_id == current_user.id):
             flash("You either don't have a note with that ID "
