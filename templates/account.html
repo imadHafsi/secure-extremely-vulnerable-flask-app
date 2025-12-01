@@ -9,6 +9,7 @@
   <div class="row mb-2">
     <div class="col col-12 col-md-6">
       <form method="post" action="/account">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-3">
           <label for="old_password" class="form-label">
             Current Password
@@ -62,6 +63,7 @@
   <div class="row mb-2">
     <div class="col">
       <form action="/darkmode" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-primary d-flex align-items-center">
           {% if g.preferences['mode'] == 'light' %}
           {{render_icon('moon')}}&nbsp;Enable Darkmode {% else %}

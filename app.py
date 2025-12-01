@@ -7,9 +7,12 @@ from flask import Flask, render_template, render_template_string, request, redir
 from db_seed import setup_db
 from routes import init
 from config import Config
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+csrf = CSRFProtect(app)
 
 app.config["BOOTSTRAP_SERVE_LOCAL"] = True
 app.config["CKEDITOR_SERVE_LOCAL"] = True
@@ -31,3 +34,8 @@ def unauthorized():
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
+
+
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=generate_csrf)

@@ -40,6 +40,7 @@ import render_icon %}
           </div>
           {% if note.user_id == current_user.id or current_user.is_admin %}
           <form method="post" action="/notes/{{note.id}}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary d-flex align-items-center">
               {{render_icon('trash')}}&nbsp;Delete
             </button>

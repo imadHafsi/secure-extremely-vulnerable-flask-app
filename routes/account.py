@@ -80,11 +80,18 @@ def update_account():
         flash(json.dumps(form.errors), 'error')
     else:
         with Session() as session:
-            # - If the user changes email or password, they must enter their current password correctly.
-            # - Email change is only allowed if the new address is not used by another account.
-            # - Password is changed only if a new password is provided and confirmed.
-            # - The is_admin flag is never updated here; role changes are restricted to a separate admin-only interface.
-            # - This prevents silent account takeover on an unattended session and stops privilege escalation via the account form.
+            # - If the user changes email or password,
+            # they must enter their current password correctly.
+
+            # - Email change is only allowed if
+            # the new address is not used by another account.
+
+            # - Password is changed only if
+            # a new password is provided and confirmed.
+
+            # - The is_admin flag is never updated here;
+            # role changes are restricted to a separate admin-only interface.
+
             new_email = form.email.data
             old_password = form.old_password.data
             new_password = form.password.data
