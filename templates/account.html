@@ -10,6 +10,12 @@
     <div class="col col-12 col-md-6">
       <form method="post" action="/account">
         <div class="mb-3">
+          <label for="old_password" class="form-label">
+            Current Password
+          </label>
+          <input type="password" class="form-control" id="old_password" name="old_password" value="{{uuid}}" />
+        </div>
+        <div class="mb-3">
           <label for="email" class="form-label">
             Email address
           </label>
@@ -17,21 +23,17 @@
         </div>
         <div class="mb-3">
           <label for="password" class="form-label">
-            Password
+            New Password
           </label>
-          <input type="password" class="form-control" id="password" name="password" value="{{uuid}}" />
+          <input type="password" class="form-control" id="password" name="password" />
         </div>
-        <input type="hidden" class="form-control" id="password_control" name="password_control" value="{{uuid}}" />
 
-        {% if current_user.is_admin %}
         <div class="mb-3">
-          <input class="form-check-input" type="checkbox" name="is_admin" checked="{{current_user.is_admin}}"
-            id="is_admin" />
-          <label class="form-check-label" for="is_admin">
-            Admin
+          <label for="password_control" class="form-label">
+            Confirm New Password
           </label>
+          <input type="password" class="form-control" id="password_control" name="password_control" />
         </div>
-        {% endif %}
         <button type="submit" class="btn btn-primary d-flex align-items-center">
           {{ render_icon('save') }}&nbsp;Update
         </button>

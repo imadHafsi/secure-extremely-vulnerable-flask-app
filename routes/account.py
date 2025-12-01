@@ -8,10 +8,11 @@ from flask_login import login_required, current_user
 from flask import redirect, flash, render_template, request, Response, g, make_response
 
 from app import app
-from models import Session, Note
+from models import Session, Note, User
 from forms.image_form import ImageForm
 from forms.account_form import AccountForm
 from utils.profile_image import get_base64_image_blob
+from bcrypt import checkpw
 
 
 
@@ -80,24 +81,57 @@ def update_account():
         flash(json.dumps(form.errors), 'error')
     else:
         with Session() as session:
-            filtered_values = {
-                key: value
-                for key, value in form.data.items()
-                if value is not None and key != 'password'
-            }
-            current_user.__dict__.update(filtered_values)
-
+            
+            # - If the user changes email or password, they must enter their current password correctly.
+            # - Email change is only allowed if the new address is not used by another account.
+            # - Password is changed only if a new password is provided and confirmed.
+            # - The is_admin flag is never updated here; role changes are restricted to a separate admin-only interface.
+            # - This prevents silent account takeover on an unattended session and stops privilege escalation via the account form.
+            
+            new_email = form.email.data
+            old_password = form.old_password.data
             new_password = form.password.data
-            was_password_changed = new_password is not None and new_password != filtered_values.get(
-                'password_control')
+            new_password_confirm = form.password_control.data
 
-            if was_password_changed:
-                current_user.password = hashpw(new_password.encode(),
-                                               gensalt()).decode()
+            email_changed = new_email != current_user.email
+            password_change_requested = bool(new_password)
+            
+            if email_changed or password_change_requested:
+                if not old_password:
+                    flash("Please enter your current password to update email or password.", "error")
+                    return redirect("/account")
+                
+                if not checkpw(
+                        old_password.encode("utf-8"),
+                        current_user.password.encode("utf-8"),
+                    ):
+                        flash("Current password is incorrect.", "error")
+                        return redirect("/account")
+                
+                if email_changed:
+                    existing = (
+                        session.query(User)
+                        .filter(User.email == form.email.data)
+                        .first()
+                    )
+                    if existing and existing.id != current_user.id:
+                        flash("This email address is already in use by another account.", "error")
+                        return redirect("/account")
+            
+                current_user.email = form.email.data
 
-            session.merge(current_user)
-            session.commit()
-            flash('Account updated', 'success')
+                if password_change_requested:
+                    if new_password != new_password_confirm:
+                        flash("New passwords do not match.", "error")
+                        return redirect("/account")
+
+                    current_user.password = hashpw(
+                            new_password.encode("utf-8"), gensalt()
+                        ).decode("utf-8")
+
+                session.merge(current_user)
+                session.commit()
+                flash('Account updated', 'success')
 
     return redirect('/account')
 
