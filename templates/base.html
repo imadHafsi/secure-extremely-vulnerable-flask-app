@@ -48,6 +48,9 @@
             {{ render_nav_item('home', 'Home') }}
             {{ render_nav_item('search', 'Search') }}
             {{ render_nav_item('get_personal_notes', 'Personal Notes') }}
+            {% if current_user.is_authenticated and current_user.is_admin %}
+              {{ render_nav_item('admin_list_users', 'User Management') }}
+            {% endif %}
             {% if current_user.is_admin %}
             {{ render_nav_item('registration_codes', 'Registration Codes') }}
             {% endif %}

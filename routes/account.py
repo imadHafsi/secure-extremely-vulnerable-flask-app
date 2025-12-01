@@ -132,6 +132,47 @@ def update_account():
 
     return redirect('/account')
 
+@app.route("/admin/users")
+@login_required
+def admin_list_users():
+
+    if not current_user.is_admin:
+        flash("You are not authorised to view that page.", "error")
+        return redirect("/home")
+
+    with Session() as session:
+        users = session.query(User).all()
+
+    return render_template("admin_users.html", users=users)
+
+
+@app.route("/admin/users/<int:user_id>/role", methods=["POST"])
+@login_required
+def admin_update_user_role(user_id: int):
+
+    if not current_user.is_admin:
+        flash("You are not authorised to change user roles.", "error")
+        return redirect("/home")
+
+    make_admin = request.form.get("is_admin") == "on"
+
+    with Session() as session:
+        user = session.get(User, user_id)
+        if user is None:
+            flash("User not found.", "warning")
+            return redirect("/admin/users")
+
+        # prevent the admins from demoting themselves
+        if user.id == current_user.id and not make_admin:
+            flash("You cannot remove your own admin role here.", "error")
+            return redirect("/admin/users")
+
+        user.is_admin = make_admin
+        session.commit()
+        flash("User role updated.", "success")
+
+    return redirect("/admin/users")
+
 
 @app.route('/darkmode', methods=['POST'])
 def toggle_darkmode():
