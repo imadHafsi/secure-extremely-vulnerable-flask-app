@@ -1,4 +1,4 @@
-from wtforms import Form, PasswordField, EmailField, BooleanField
+from wtforms import Form, PasswordField, EmailField
 
 
 # The is_admin flag is intentionally NOT exposed here to prevent privilege escalation.
