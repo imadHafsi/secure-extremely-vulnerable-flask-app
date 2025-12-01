@@ -102,7 +102,8 @@ def update_account():
 
             if email_changed or password_change_requested:
                 if not old_password:
-                    flash("Please enter your current password to update email or password.", "error")
+                    flash("Please enter your current password" \
+                    "to update email or password.", "error")
                     return redirect("/account")
                 if not checkpw(
                         old_password.encode("utf-8"),

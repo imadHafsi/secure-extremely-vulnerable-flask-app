@@ -16,7 +16,7 @@
   </div>
   <div class="row mb-2">
     <div class="col">
-      {{ render_table(personal_notes, responsive=True, safe_columns=['text']) }}
+      {{ render_table(personal_notes, responsive=True) }}
       {% if personal_notes | length == 0 %}
       <p>No notes yet</p>
       {% endif %}
