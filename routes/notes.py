@@ -5,6 +5,7 @@ from app import app
 from forms.note_form import NoteForm
 from models import Session, Note
 from utils.notes import get_notes_for_user
+from utils.sanitizer import sanitize_note_text
 
 
 @app.route('/notes', methods=['GET'])
@@ -22,10 +23,14 @@ def add_note():
         flash(dumps(form.errors), 'error')
     else:
         with Session(expire_on_commit=False) as session:
+            raw_title = form.title.data
+            clean_title = sanitize_note_text(raw_title)
+            raw_text = form.text.data
+            clean_text = sanitize_note_text(raw_text)
             note = Note(id=None,
                         created_at=None,
-                        title=form.title.data,
-                        text=form.text.data,
+                        title=clean_title,
+                        text=clean_text,
                         private=form.private.data,
                         user_id=current_user.id)
             session.add(note)
