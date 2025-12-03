@@ -81,74 +81,85 @@ def add_image():
     return redirect('/account')
 
 
-@app.route('/account', methods=['POST'])
+@app.route("/account", methods=["POST"])
 @login_required
 def update_account():
     form = AccountForm(request.form)
 
     if not form.validate():
-        flash(json.dumps(form.errors), 'error')
-    else:
-        with Session() as session:
-            # - If the user changes email or password,
-            # they must enter their current password correctly.
+        # Show each field error as a readable flash message
+        for field_name, errors in form.errors.items():
+            field_label = getattr(form, field_name).label.text
+            for error in errors:
+                flash(f"{field_label}: {error}", "error")
+        return redirect("/account")
 
-            # - Email change is only allowed if
-            # the new address is not used by another account.
+    new_email = form.email.data
+    old_password = form.old_password.data
+    new_password = form.password.data
 
-            # - Password is changed only if
-            # a new password is provided and confirmed.
+    email_changed = new_email != current_user.email
+    password_change_requested = bool(new_password)
 
-            # - The is_admin flag is never updated here;
-            # role changes are restricted to a separate admin-only interface.
+    with Session() as session:
+        # If the user changes email or password,
+        # they must enter their current password correctly.
+        if email_changed or password_change_requested:
+            if not old_password:
+                flash(
+                    "Please enter your current password to update email or password.",
+                    "error",
+                )
+                return redirect("/account")
 
-            new_email = form.email.data
-            old_password = form.old_password.data
-            new_password = form.password.data
-            new_password_confirm = form.password_control.data
+            if not checkpw(
+                old_password.encode("utf-8"),
+                current_user.password.encode("utf-8"),
+            ):
+                flash("Current password is incorrect.", "error")
+                return redirect("/account")
 
-            email_changed = new_email != current_user.email
-            password_change_requested = bool(new_password)
+        # Email change is only allowed if the new address is not used by another account.
+        if email_changed:
+            existing = (
+                session.query(User)
+                .filter(User.email == new_email)
+                .first()
+            )
+            if existing and existing.id != current_user.id:
+                flash(
+                    "This email address is already in use by another account.",
+                    "error",
+                )
+                return redirect("/account")
 
-            if email_changed or password_change_requested:
-                if not old_password:
-                    flash("Please enter your current password" \
-                    "to update email or password.", "error")
-                    return redirect("/account")
-                if not checkpw(
-                        old_password.encode("utf-8"),
-                        current_user.password.encode("utf-8"),
-                    ):
-                    flash("Current password is incorrect.", "error")
-                    return redirect("/account")
+            current_user.email = new_email
 
-                if email_changed:
-                    existing = (
-                        session.query(User)
-                        .filter(User.email == form.email.data)
-                        .first()
-                    )
+        # Password is changed only if a new password is provided and confirmed.
+        if password_change_requested:
+            # form.validate() already ensured length + EqualTo (match)
+            # Optional extra: new password must differ from old password
+            if checkpw(
+                new_password.encode("utf-8"),
+                current_user.password.encode("utf-8"),
+            ):
+                flash(
+                    "New password must be different from the old password.",
+                    "error",
+                )
+                return redirect("/account")
 
-                    if existing and existing.id != current_user.id:
-                        flash("This email address is already in use by another account.", "error")
-                        return redirect("/account")
+            current_user.password = hashpw(
+                new_password.encode("utf-8"),
+                gensalt(),
+            ).decode("utf-8")
 
-                current_user.email = form.email.data
 
-                if password_change_requested:
-                    if new_password != new_password_confirm:
-                        flash("New passwords do not match.", "error")
-                        return redirect("/account")
+        session.merge(current_user)
+        session.commit()
+        flash("Account updated", "success")
 
-                    current_user.password = hashpw(
-                            new_password.encode("utf-8"), gensalt()
-                        ).decode("utf-8")
-
-                session.merge(current_user)
-                session.commit()
-                flash('Account updated', 'success')
-
-    return redirect('/account')
+    return redirect("/account")
 
 @app.route("/admin/users")
 @login_required
