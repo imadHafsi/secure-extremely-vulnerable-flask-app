@@ -1,11 +1,9 @@
-from pickle import dumps, loads
-from base64 import b64encode, b64decode
 import json
 from uuid import uuid4
 
 from bcrypt import gensalt, hashpw, checkpw
 from flask_login import login_required, current_user
-from flask import redirect, flash, render_template, request, Response, g, make_response
+from flask import redirect, flash, render_template, request, Response, g
 
 from app import app
 from models import Session, Note, User
@@ -61,12 +59,24 @@ def add_image():
 
     if not form.validate():
         flash(json.dumps(form.errors), 'error')
-    else:
-        with Session() as session:
-            current_user.profile_image = get_base64_image_blob(
-                form.url.data).encode()
-            session.merge(current_user)
-            session.commit()
+        return redirect('/account')
+
+    try:
+        image_blob = get_base64_image_blob(form.url.data)
+    except ValueError as e:
+        # Our own safety checks (unsafe URL, not an image, too large, etc.)
+        flash(str(e), 'error')
+        return redirect('/account')
+    except Exception:
+        # Any unexpected error while fetching/parsing the image
+        flash("Could not download profile image from that URL.", "error")
+        return redirect('/account')
+
+    with Session() as session:
+        current_user.profile_image = image_blob.encode()
+        session.merge(current_user)
+        session.commit()
+        flash("Profile image updated.", "success")
 
     return redirect('/account')
 
