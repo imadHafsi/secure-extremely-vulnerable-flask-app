@@ -181,36 +181,54 @@ def admin_update_user_role(user_id: int):
 
     return redirect("/admin/users")
 
+default_preferences = {"mode": "light"}
 
-@app.route('/darkmode', methods=['POST'])
+
+@app.route("/darkmode", methods=["POST"])
+@login_required
 def toggle_darkmode():
-    response = make_response(redirect('/account'))
 
-    preferences = g.preferences
-    preferences['mode'] = 'light' if preferences['mode'] == 'dark' else 'dark'
+    prefs = getattr(g, "preferences", default_preferences.copy())
+    mode = prefs.get("mode", "light")
 
-    response.set_cookie('preferences', b64encode(dumps(preferences)).decode())
-    return response
+    prefs["mode"] = "light" if mode == "dark" else "dark"
+    g.preferences = prefs
 
-
-default_preferences = {'mode': 'light'}
+    return redirect("/account")
 
 
 @app.before_request
 def before_request():
-    preferences = request.cookies.get('preferences')
-    if preferences is None:
-        preferences = default_preferences
+
+    raw = request.cookies.get("preferences")
+    if not raw:
+        # start from a copy so each request gets its own dict
+        preferences = default_preferences.copy()
     else:
-        preferences = loads(b64decode(preferences))
+        try:
+            preferences = json.loads(raw)
+        except json.JSONDecodeError:
+            preferences = default_preferences.copy()
+
+    # Basic validation: only allow known modes
+    mode = preferences.get("mode", "light")
+    if mode not in ("light", "dark"):
+        preferences["mode"] = "light"
 
     g.preferences = preferences
 
 
 @app.after_request
 def after_request(response: Response) -> Response:
-    if request.cookies.get('preferences') is None:
-        preferences = default_preferences
-        response.set_cookie('preferences',
-                            b64encode(dumps(preferences)).decode())
+
+    prefs = getattr(g, "preferences", None)
+    if prefs is None:
+        prefs = default_preferences.copy()
+
+    response.set_cookie(
+        "preferences",
+        json.dumps(prefs),
+        httponly=False,
+        samesite="Lax",
+    )
     return response
