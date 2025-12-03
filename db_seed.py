@@ -1,9 +1,18 @@
+import os
 from uuid import uuid4
 from bcrypt import hashpw, gensalt
 from models import RegistrationCode, User, Note, Session
 
 
 def setup_db():
+
+
+    # Only run this seeding logic in development.
+    # In production, set SEVFA_ENV=production so this returns immediately.
+    if os.environ.get("SEVFA_ENV", "development") != "development":
+        print("Skipping DB seed: not running in development environment.")
+        return
+
     with Session() as session:
         if session.query(RegistrationCode).count() == 0:
             static_code = 'a36e990b-0024-4d55-b74a-f8d7528e1764'

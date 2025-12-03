@@ -1,4 +1,3 @@
-from json import dumps
 from sqlite3 import OperationalError
 from typing import Union
 from flask import render_template, request, redirect, flash
@@ -9,7 +8,7 @@ from forms.registration_form import RegistrationForm
 
 def validate_token(code: str, session: Session) -> Union[str, None]:
     try:
-        
+
         token = (
         session.query(RegistrationCode)
         .filter(RegistrationCode.code == code)
@@ -22,7 +21,7 @@ def validate_token(code: str, session: Session) -> Union[str, None]:
         return token.id
     except OperationalError:
         return None
-    
+
 @app.route('/signup', methods=['GET'])
 def signup():
     form = RegistrationForm()
@@ -67,7 +66,7 @@ def do_signup():
         # Consume the registration code
         session.delete(token)
 
-        
+
         user = User(
             form.email.data,
             hashpw(form.password.data.encode("utf-8"), gensalt()).decode("utf-8"),
