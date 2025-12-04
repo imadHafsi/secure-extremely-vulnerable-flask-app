@@ -1,12 +1,12 @@
-<div class="modal fade" id="create_note_modal" tabindex="-1" aria-labelledby="Create Note Modal" aria-hidden="true">
+<div class="modal fade" id="create_note_modal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Create Note</h5>
+        <h5 class="modal-title" id="noteModalLabel">Create Note</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form method="post" action="/notes">
+        <form id="noteForm" method="post" action="/notes">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="mb-3">
             <label for="title" class="form-label">
@@ -26,7 +26,7 @@
               Private?
             </label>
           </div>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary" id="noteModalSubmit">
             Add Note
           </button>
         </form>

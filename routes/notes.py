@@ -58,3 +58,28 @@ def delete_note(note_id: int):
             flash('Note deleted', 'info')
 
     return redirect('/home')
+
+@app.route('/notes/<int:note_id>/edit', methods=['POST'])
+@login_required
+def edit_note(note_id):
+    form = NoteForm(request.form)
+
+    if not form.validate():
+        flash(dumps(form.errors), 'error')
+        return redirect('/home')
+
+    with Session(expire_on_commit=False) as session:
+        note = session.get(Note, note_id)
+        
+        if note is None or note.user_id != current_user.id:
+            flash("You don't have a note with that ID", "warning")
+        else:
+            raw_title = form.title.data
+            raw_text = form.text.data
+            note.title = sanitize_note_text(raw_title)
+            note.text = sanitize_note_text(raw_text)
+            note.private = form.private.data
+            session.commit()
+            flash('Note updated', 'success')
+
+    return redirect('/home')

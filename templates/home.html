@@ -6,8 +6,12 @@ import render_icon %}
     <div class="col">
       <div class="d-flex justify-content-between align-items-center">
         <h1>Home</h1>
-        <button class="btn btn-primary mb-2 d-flex align-items-center" data-bs-toggle="modal"
-          data-bs-target="#create_note_modal">
+        <button
+          class="btn btn-primary mb-2 d-flex align-items-center"
+          data-bs-toggle="modal"
+          data-bs-target="#create_note_modal"
+          data-mode="create"
+        >
           {{ render_icon('file-earmark-plus') }}&nbsp;Create note
         </button>
       </div>
@@ -33,19 +37,40 @@ import render_icon %}
         <div class="card-footer text-muted d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
             <object width="40" height="40" class="rounded img-thumbnail d-flex"
-              data="{{note.user.profile_image.decode() if note.user.profile_image else '/static/fallback.png'}}">
+              data="{{ note.user.profile_image.decode() if note.user.profile_image else '/static/fallback.png' }}">
               <img width="40" height="40" class="rounded img-thumbnail" src="/static/fallback.png" />
             </object>
             <span class="ms-1">By {{ note.user.email }}</span>
           </div>
-          {% if note.user_id == current_user.id or current_user.is_admin %}
-          <form method="post" action="/notes/{{note.id}}/delete">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-primary d-flex align-items-center">
-              {{render_icon('trash')}}&nbsp;Delete
+
+          <div class="d-flex gap-2">
+            {# Only owner can edit #}
+            {% if note.user_id == current_user.id %}
+            <button
+              type="button"
+              class="btn btn-secondary d-flex align-items-center"
+              data-bs-toggle="modal"
+              data-bs-target="#create_note_modal"
+              data-mode="edit"
+              data-note-id="{{ note.id }}"
+              data-note-title="{{ note.title|e }}"
+              data-note-private="{{ 'true' if note.private else 'false' }}"
+              data-note-text="{{ note.text|e }}"
+            >
+              {{ render_icon('pencil') }}&nbsp;Edit
             </button>
-          </form>
           {% endif %}
+
+            {# Owner or admin can delete #}
+            {% if note.user_id == current_user.id or current_user.is_admin %}
+              <form method="post" action="/notes/{{ note.id }}/delete" class="m-0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary d-flex align-items-center">
+                  {{ render_icon('trash') }}&nbsp;Delete
+                </button>
+              </form>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
@@ -55,4 +80,67 @@ import render_icon %}
     {% endif %}
   </div>
 </div>
-{% endblock %} {% block scripts %} {{ ckeditor.load() }} {% endblock %}
+{% endblock %}
+{% block scripts %}
+  {{ ckeditor.load() }}
+
+  <script>
+    function getEditorInstance() {
+      if (!window.CKEDITOR || !CKEDITOR.instances) return null;
+      if (CKEDITOR.instances['text']) return CKEDITOR.instances['text'];
+      var keys = Object.keys(CKEDITOR.instances);
+      return keys.length ? CKEDITOR.instances[keys[0]] : null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var noteModal = document.getElementById('create_note_modal');
+      if (!noteModal) return;
+
+      noteModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        if (!button) return;
+
+        var mode = button.getAttribute('data-mode') || 'create';
+
+        var form = noteModal.querySelector('#noteForm');
+        var modalTitle = noteModal.querySelector('#noteModalLabel');
+        var submitBtn = noteModal.querySelector('#noteModalSubmit');
+        var titleInput = form.querySelector('input[name="title"]');
+        var privateInput = form.querySelector('input[name="private"]');
+
+        var editor = getEditorInstance();
+
+        if (mode === 'edit') {
+          // --- EDIT MODE ---
+          var noteId = button.getAttribute('data-note-id');
+          var noteTitle = button.getAttribute('data-note-title') || '';
+          var notePrivate = button.getAttribute('data-note-private') === 'true';
+          var noteHtml = button.getAttribute('data-note-text') || '';
+
+          form.action = '/notes/' + noteId + '/edit';
+          modalTitle.textContent = 'Edit Note';
+          submitBtn.textContent = 'Save changes';
+
+          titleInput.value = noteTitle;
+          privateInput.checked = notePrivate;
+
+          if (editor) {
+            editor.setData(noteHtml);
+          }
+        } else {
+          // --- CREATE MODE ---
+          form.action = '/notes';
+          modalTitle.textContent = 'Create Note';
+          submitBtn.textContent = 'Add Note';
+
+          titleInput.value = '';
+          privateInput.checked = false;
+
+          if (editor) {
+            editor.setData('');
+          }
+        }
+      });
+    });
+  </script>
+{% endblock %}
